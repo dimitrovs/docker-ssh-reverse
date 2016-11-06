@@ -1,4 +1,4 @@
-This docker image allows you to expose Docker host ports on a public IP assigned to any machine you can connect to over SSH.
+This image allows you to forward TCP ports from remote servers you control to your Docker host or to containers running on your Docker host. For instance, if you have a VPS with a public IP you can use this image to make any local container (for example: a local wordpress) accessible on the public IP of your VPS.
 
 How to use this image:
 1) On the server which has the public IP you want to forward ports on make sure the following line is present in the /etc/ssh/sshd_config file:
@@ -8,16 +8,16 @@ GatewayPorts clientspecified
 Note: if you want your services to listen on ALL IPs the server has, then you can use "GatewayPorts yes" instead. Don't forget to restart the SSH on the remote server after making this change (/etc/init.d/ssh restart) .
 
 2) Add your SSH public key to ~/.ssh/authorized_keys on the server you are connecting to. Public key authentication is required for this image.
-3) Run the image like this: docker run -d --restart=always -v LOCATION_OF_SSH_KEYS:/root/.ssh -e SSH_STRING="-p 22 root@[REMOTE_IP] REMOTE_IP:REMOTE_PORT:LOCAL_IP:LOCAL_PORT" stefand/ssh-reverse
+3) Run the image like this: docker run -d --restart=always -v LOCATION_OF_SSH_KEYS:/root/.ssh -e SSH_STRING="-p 22 root@[REMOTE_IP] -R REMOTE_IP:REMOTE_PORT:LOCAL_IP:LOCAL_PORT" stefand/ssh-reverse
 
 Each one of the parameters is described below:
 - LOCATION_OF_SSH_KEYS: this is the path on your Docker host where the following files can be found:
 * id_rsa - private key for SSH authentication
 * id_rsa.pub - public key for SSH authentication, must be added to ~/.ssh/authorized_keys on the remote server
 * known_hosts - the remote server's fingerprint must exist in this file
-- SSH_STRING : this is the string that will be passed to ssh. You need to put at least user@ip to connect to the remote server and -R followed by any ports you want to forward in format REMOTE_IP:REMOTE_PORT:LOCAL_IP:LOCAL_PORT. You can add as many -R entries to this string as you wish. To forward a port to Docker host (for example if you run your docker containers with -p) use dockerhost as the local ip. If you want to forward ports to another container then add --link to the docker run command and use the other container's hostname as LOCAL_IP. Note that if you want to forward ports < 1000 you must connect as root. If your SSH server is listening on a non-standard port add -p followed by the port to this string.
+- SSH_STRING: this is the string that will be passed to ssh. You need to put at least user@ip to connect to the remote server and -R followed by any ports you want to forward in format REMOTE_IP:REMOTE_PORT:LOCAL_IP:LOCAL_PORT. You can add as many -R entries to this string as you wish. To forward a port to Docker host (for example if you run your docker containers with -p) use dockerhost as the local ip. If you want to forward ports to another container then add --link to the docker run command and use the other container's hostname as LOCAL_IP. Note that if you want to forward ports < 1000 you must connect as root. If your SSH server is listening on a non-standard port add -p followed by the port to this string.
 
-To add the server's fingerprint to the known hosts file, connect to it from your Docker host by appending
+To add the server's fingerprint to the known hosts file, connect to it from your Docker host by appending:
 
 -i LOCATION_OF_SSH_KEYS/id_rsa -o UserKnownHostsFile=LOCATION_OF_SSH_KEYS/known_hosts
 
